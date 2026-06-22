@@ -1,4 +1,4 @@
-# welcome-navigator
+# sbes2026-ctic-es
 
 Repositório de artefatos do artigo "Dívida Técnica Arquitetural em Sistemas Gerados por IA Generativa: um estudo experimental sobre MVPs e escalabilidade", submetido ao CTIC-ES / SBES 2026.
 
