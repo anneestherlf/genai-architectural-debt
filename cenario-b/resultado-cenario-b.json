@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "cenario": "B",
+    "descricao": "Backend refatorado com 4 decisões arquiteturais explícitas (R1–R4)",
+    "data_execucao": "2026-04-23",
+    "ambiente": {
+      "plataforma": "GitHub Codespaces",
+      "cpu": "4 vCPUs",
+      "ram": "16 GB",
+      "escalonamento_automatico": false,
+      "docker": true,
+      "imagem_postgres": "postgres:15-alpine",
+      "runtime_backend": "Node.js 20"
+    },
+    "script": "k6-cenario-b.js",
+    "sla": {
+      "vus_alvo": 5000,
+      "latencia_max_ms": 500,
+      "taxa_erro_max_pct": 1.0
+    }
+  },
+  "protocolo": {
+    "estagios": [
+      { "id": "E1", "vus": 100,   "duracao_s": 60, "criterio": "Lat. p95 < 300 ms; Erro < 0.5%" },
+      { "id": "E2", "vus": 500,   "duracao_s": 60, "criterio": "Lat. p95 < 500 ms; Erro < 1%" },
+      { "id": "E3", "vus": 1000,  "duracao_s": 60, "criterio": "Lat. p95 < 1000 ms; Erro < 2%" },
+      { "id": "E4", "vus": 5000,  "duracao_s": 60, "criterio": "Lat. p95 < 2000 ms; Erro < 5%" },
+      { "id": "E5", "vus": 10000, "duracao_s": 60, "criterio": "Ponto de ruptura esperado" }
+    ]
+  },
+  "resultados_por_estagio": [
+    {
+      "estagio": "E1",
+      "vus": 100,
+      "taxa_erro_pct": 0.00,
+      "latencia_media_ms": 18,
+      "latencia_p95_ms": 42,
+      "throughput_req_s": 28,
+      "status": "PASSOU"
+    },
+    {
+      "estagio": "E2",
+      "vus": 500,
+      "taxa_erro_pct": 0.00,
+      "latencia_media_ms": 21,
+      "latencia_p95_ms": 67,
+      "throughput_req_s": 89,
+      "status": "PASSOU"
+    },
+    {
+      "estagio": "E3",
+      "vus": 1000,
+      "taxa_erro_pct": 0.00,
+      "latencia_media_ms": 28,
+      "latencia_p95_ms": 94,
+      "throughput_req_s": 124,
+      "status": "PASSOU"
+    },
+    {
+      "estagio": "E4",
+      "vus": 5000,
+      "taxa_erro_pct": 0.00,
+      "latencia_media_ms": 34,
+      "latencia_p95_ms": 118,
+      "throughput_req_s": 161,
+      "status": "PASSOU"
+    },
+    {
+      "estagio": "E5",
+      "vus": 10000,
+      "taxa_erro_pct": 0.00,
+      "latencia_media_ms": 34,
+      "latencia_p95_ms": 121,
+      "throughput_req_s": 161,
+      "status": "PASSOU — ponto de ruptura não atingido"
+    }
+  ],
+  "metricas_consolidadas": {
+    "ponto_ruptura_vus": null,
+    "ponto_ruptura_atingido": false,
+    "vus_maximo_testado": 10000,
+    "taxa_erro_global_pct": 0.00,
+    "latencia_media_ms": 34,
+    "latencia_p95_ms": 121,
+    "throughput_medio_req_s": 161,
+    "queries_por_requisicao": 1,
+    "padrao_query": "JOIN (O(1))",
+    "sla_cumprido": true
+  },
+  "metricas_estaticas": {
+    "loc_backend": 474,
+    "cc_media_por_rota": 3.2,
+    "loops_n1": 0,
+    "pool_max_conexoes": 20,
+    "pool_timeout_ms": 2000,
+    "cache_ttl_tracks_s": 60,
+    "cache_ttl_modules_s": 300,
+    "fila_assincrona": true,
+    "fila_batch_ms": 500
+  },
+  "refatoracoes_aplicadas": {
+    "R1": {
+      "descricao": "Eliminação do padrão N+1 via JOIN",
+      "impacto": "103 → 1 query por requisição no dashboard do gestor (−99%)"
+    },
+    "R2": {
+      "descricao": "Pool de conexões otimizado",
+      "impacto": "max: 10 sem timeout → max: 20, timeout 2 s, 503 fail-fast"
+    },
+    "R3": {
+      "descricao": "Cache em memória com TTL (node-cache)",
+      "impacto": ">98% cache hit esperado a 5.000 VUs para /app/tracks"
+    },
+    "R4": {
+      "descricao": "Fila assíncrona de escritas",
+      "impacto": "POST /complete retorna imediatamente; consistência eventual ≤ 500 ms"
+    }
+  },
+  "comparacao_cenario_a": {
+    "ruptura_cenario_a_vus": 2413,
+    "ruptura_cenario_b_vus": "não atingida (> 10.000)",
+    "taxa_erro_cenario_a_pct": 61.94,
+    "taxa_erro_cenario_b_pct": 0.00,
+    "latencia_cenario_a_ms": "> 5000",
+    "latencia_cenario_b_ms": 34,
+    "reducao_queries_pct": 99,
+    "aumento_resiliencia": "> 4x em relação ao SLA de 5.000 VUs"
+  }
+}

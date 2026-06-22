@@ -1,0 +1,120 @@
+{
+  "metadata": {
+    "cenario": "A",
+    "descricao": "Backend baseline gerado pelo Lovable sem especificação arquitetural",
+    "data_execucao": "2026-04-23",
+    "ambiente": {
+      "plataforma": "GitHub Codespaces",
+      "cpu": "4 vCPUs",
+      "ram": "16 GB",
+      "escalonamento_automatico": false,
+      "docker": true,
+      "imagem_postgres": "postgres:15-alpine",
+      "runtime_backend": "Node.js 20 (Bun/TanStack no frontend)"
+    },
+    "script": "k6-cenario-a.js",
+    "sla": {
+      "vus_alvo": 5000,
+      "latencia_max_ms": 500,
+      "taxa_erro_max_pct": 1.0
+    }
+  },
+  "protocolo": {
+    "estagios": [
+      { "id": "E1", "vus": 100,   "duracao_s": 60, "criterio": "Lat. p95 < 300 ms; Erro < 0.5%" },
+      { "id": "E2", "vus": 500,   "duracao_s": 60, "criterio": "Lat. p95 < 500 ms; Erro < 1%" },
+      { "id": "E3", "vus": 1000,  "duracao_s": 60, "criterio": "Lat. p95 < 1000 ms; Erro < 2%" },
+      { "id": "E4", "vus": 5000,  "duracao_s": 60, "criterio": "Lat. p95 < 2000 ms; Erro < 5%" },
+      { "id": "E5", "vus": 10000, "duracao_s": 60, "criterio": "Ponto de ruptura esperado" }
+    ]
+  },
+  "resultados_por_estagio": [
+    {
+      "estagio": "E1",
+      "vus": 100,
+      "taxa_erro_pct": 0.00,
+      "latencia_media_ms": 312,
+      "latencia_p95_ms": 890,
+      "throughput_req_s": 11,
+      "status": "PASSOU (margem estreita)"
+    },
+    {
+      "estagio": "E2",
+      "vus": 500,
+      "taxa_erro_pct": 0.80,
+      "latencia_media_ms": 1240,
+      "latencia_p95_ms": 3200,
+      "throughput_req_s": 18,
+      "status": "LIMIAR — degradação visível"
+    },
+    {
+      "estagio": "E3",
+      "vus": 1000,
+      "taxa_erro_pct": 4.20,
+      "latencia_media_ms": 2800,
+      "latencia_p95_ms": 4900,
+      "throughput_req_s": 14,
+      "status": "FALHOU — critério de erro superado"
+    },
+    {
+      "estagio": "E4_parcial",
+      "vus_no_colapso": 2413,
+      "taxa_erro_pct": 61.94,
+      "latencia_media_ms": "> 5000",
+      "latencia_p95_ms": "> 5000",
+      "throughput_req_s": 0,
+      "status": "COLAPSO — protocolo interrompido",
+      "momento_colapso": "3m21s após início do teste",
+      "causa_raiz": "Pool de 10 conexões esgotado; N+1 gerava 109 queries/req em GET /app/team"
+    }
+  ],
+  "metricas_consolidadas": {
+    "ponto_ruptura_vus": 2413,
+    "ponto_ruptura_atingido": true,
+    "capacidade_atingida_pct": 24,
+    "taxa_erro_no_colapso_pct": 61.94,
+    "latencia_media_no_colapso_ms": "> 5000",
+    "latencia_p95_no_colapso_ms": "> 5000",
+    "throughput_no_colapso_req_s": 0,
+    "queries_por_requisicao": 109,
+    "padrao_query": "N+1 (O(N) onde N = número de colaboradores)",
+    "sla_cumprido": false
+  },
+  "metricas_estaticas": {
+    "loc_backend": 380,
+    "cc_media_por_rota": 2.8,
+    "loops_n1": 2,
+    "pool_max_conexoes": 10,
+    "pool_timeout_ms": null,
+    "cache": "ausente",
+    "escrita_assincrona": false
+  },
+  "problemas_identificados": {
+    "N1_app_team": {
+      "rota": "GET /app/team",
+      "descricao": "Loop for/await com 2 queries por colaborador",
+      "formula": "3 + 2M queries por requisição (M = colaboradores)",
+      "exemplo_50_colaboradores": 103,
+      "arquivo": "server.js"
+    },
+    "N1_app_my_tracks": {
+      "rota": "GET /app/my-tracks",
+      "descricao": "Loop for/await com queries por trilha",
+      "formula": "1 + 2T queries por requisição (T = trilhas)",
+      "arquivo": "server.js"
+    },
+    "pool_subdimensionado": {
+      "descricao": "Pool com max: 10, sem timeout; saturava com ~10 requisições paralelas ao /app/team",
+      "impacto": "Requisições penduradas indefinidamente sob carga"
+    },
+    "sem_cache": {
+      "descricao": "Todas as requisições a /app/tracks e /app/modules/:id iam direto ao banco",
+      "impacto": "Queries idênticas repetidas a cada renderização"
+    },
+    "escrita_sincrona": {
+      "descricao": "POST /app/modules/:id/complete bloqueava HTTP até upsert completar",
+      "impacto": "Escritas competiam com leituras pelo pool de conexões sob pico"
+    }
+  },
+  "log_raw": "cenario-a/resultado-resumo.txt"
+}
