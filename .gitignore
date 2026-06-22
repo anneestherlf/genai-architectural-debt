@@ -57,3 +57,4 @@ dist-ssr
 *.sw?
 resultados-cenario-a.json
 resultados-cenario-b.json
+".env" 
