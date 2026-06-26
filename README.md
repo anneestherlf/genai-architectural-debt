@@ -1,125 +1,107 @@
 # genai-architectural-debt
 
-Repositório de artefatos do artigo "Dívida Técnica Arquitetural em Sistemas Gerados por IA Generativa: um estudo experimental sobre MVPs e escalabilidade", submetido ao CTIC-ES / SBES 2026.
+Repositório de artefatos do artigo **"Dívida Técnica Arquitetural em Sistemas Gerados por IA Generativa: um estudo experimental sobre MVPs e escalabilidade"**, submetido ao CTIC-ES / SBES 2026.
 
 **Autora:** Anne Esther Lins Figueirôa (INTELI)  
 **Orientador:** Prof. Reginaldo Arakaki (INTELI)  
-**Coorientadora:** Prof.ª Fabiana Martins de Oliveira (USP)
+**Coorientadora:** Prof.ª Fabiana Martins de Oliveira (USP)  
+**Repositório:** https://github.com/anneestherlf/genai-architectural-debt
 
 ---
 
 ## O que tem aqui
 
-O experimento compara dois backends de uma plataforma de onboarding corporativo, implementados sobre a mesma stack (Node.js + PostgreSQL). A diferença entre eles está exclusivamente nas decisões arquiteturais embutidas nos prompts de geração.
-
-O **Cenário A** foi gerado pelo Lovable com prompts de negócio, sem nenhuma especificação técnica. O **Cenário B** é o mesmo backend, refatorado com quatro prompts arquiteturais enviados ao Claude.
+O experimento compara dois servidores de aplicação de uma plataforma de onboarding corporativo, implementados sobre a mesma pilha tecnológica (Node.js + PostgreSQL). A diferença entre eles está exclusivamente nas decisões arquiteturais embutidas nos prompts de geração.
 
 | | Cenário A | Cenário B |
 |---|---|---|
+| Geração | Lovable (prompts de negócio) | Claude — prompts arquiteturais |
 | Queries por requisição (`/app/team`) | 109 (padrão N+1) | 1 (JOIN) |
-| Pool de conexões | max: 10, sem timeout | max: 20, timeout 2 s |
-| Cache | Nenhum | TTL 60–300 s |
-| Escritas | Síncronas | Fila assíncrona |
+| Pool de conexões | max:10, sem timeout | max:20, timeout 2 s |
+| Cache | Ausente | TTL 60–300 s (node-cache) |
+| Escrita de progresso | Síncrona (bloqueia HTTP) | Fila assíncrona |
 
-A diferença de 99% no número de consultas ao banco é verificável diretamente no código-fonte (`server.js` de cada cenário), sem necessidade de execução.
+### Resultados dos testes de carga (100 VUs, 3 minutos, GitHub Codespaces)
+
+| Métrica | Cenário A | Cenário B |
+|---|---|---|
+| Taxa de erro | 0,00% | 0,00% |
+| Latência média | 1.660 ms | 25 ms |
+| Limite p95 < 2 s | **violado** | cumprido |
+| Consultas/req | 109 (loop) | 1 (JOIN) |
 
 ---
 
-## Estrutura
+## Estrutura do repositório
 
 ```
 genai-architectural-debt/
+├── cenario-a/
+│   ├── server.js              # Servidor gerado pelo Lovable (sem refatoração)
+│   ├── schema.sql             # Schema do banco de dados
+│   ├── seed.js                # Geração de dados sintéticos (530 usuários, 50 trilhas)
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── k6-cenario-a.js        # Script K6 — teste de carga
+│   └── resultado-cenario-a.json  # Métricas reais do teste
+├── cenario-b/
+│   ├── server.js              # Servidor refatorado com 4 decisões arquiteturais
+│   ├── schema.sql
+│   ├── seed.js
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── k6-cenario-b.js        # Script K6 — mesmo protocolo do Cenário A
+│   └── resultado-cenario-b.json  # Métricas reais do teste
 ├── prompts/
-│   └── prompts-arquiteturais.md   # Os 4 prompts completos (R1–R4)
-│
-├── cenario-a/                     # Backend original gerado pelo Lovable
-│   ├── server.js                  # Contém o padrão N+1 (ver GET /app/team)
-│   ├── schema.sql
-│   ├── seed.js
-│   ├── k6-cenario-a.js
-│   ├── resultado-resumo.txt       # Log de teste de carga
-│   ├── Dockerfile
-│   └── docker-compose.yml
-│
-├── cenario-b/                     # Backend refatorado com R1–R4
-│   ├── server.js                  # JOIN substituiu o loop (ver GET /app/team)
-│   ├── schema.sql
-│   ├── seed.js
-│   ├── k6-cenario-b.js
-│   ├── Dockerfile
-│   └── docker-compose.yml
-│
-├── src/                           # Frontend (TanStack/React, gerado pelo Lovable)
-└── supabase/                      # Migrations SQL
+│   └── prompts-arquiteturais.md  # Prompts completos R1–R4 com os 4 componentes
+├── main.tex                   # Artigo completo (LaTeX / CBSoft template)
+├── referencias.bib            # Referências bibliográficas
+└── README.md
 ```
 
 ---
 
-## Como verificar a diferença arquitetural
+## Como reproduzir os testes
 
-A contribuição principal deste estudo é verificável por inspeção estática. No arquivo `cenario-a/server.js`, localize a rota `GET /app/team` e observe o loop `for/await` que executa 2 consultas por colaborador. No `cenario-b/server.js`, a mesma rota usa um único `LEFT JOIN`.
+**Pré-requisitos:** Docker, Node.js, k6 instalados.
 
-```bash
-# Contar consultas ao banco no Cenário A (rota /app/team)
-grep -c "await pool.query" cenario-a/server.js
-
-# Ver a query com JOIN no Cenário B
-grep -A 20 "app/team" cenario-b/server.js | grep -i "join"
-```
-
----
-
-## Como rodar os testes de carga
-
-**Recomendação:** para obter resultados confiáveis, execute banco de dados, servidor e K6 em instâncias separadas. Rodar tudo no mesmo host (como GitHub Codespaces) satura a infraestrutura antes de evidenciar o gargalo arquitetural.
+### Cenário A
 
 ```bash
-# Cenário A
 cd cenario-a
+docker compose down -v
 docker compose up -d --build
-sleep 15
+sleep 20
+npm install
 node seed.js
 k6 run k6-cenario-a.js 2>&1 | tee resultado-cenario-a-log.txt
+```
 
-# Cenário B
+### Cenário B
+
+```bash
+# Primeiro derrubar o Cenário A para liberar a porta 3000
+cd ../cenario-a && docker compose down
+
 cd ../cenario-b
 docker compose up -d --build
-sleep 15
+sleep 20
+npm install
 node seed.js
 k6 run k6-cenario-b.js 2>&1 | tee resultado-cenario-b-log.txt
 ```
 
----
-
-## Prompts arquiteturais
-
-O arquivo `prompts/prompts-arquiteturais.md` contém os quatro prompts usados para refatorar o Cenário A, cada um seguindo o modelo de quatro componentes:
-
-1. **Funcionalidade:** o que o endpoint faz, em linguagem de negócio
-2. **Restrição técnica:** como o banco deve ser acessado
-3. **Tradeoff aceito:** a consequência que o founder aceita em troca de escalabilidade
-4. **Documentação:** pedido de explicação do padrão corrigido no código
-
-| Refatoração | Problema | Solução |
-|---|---|---|
-| R1 | 109 consultas por requisição (N+1) | 1 consulta com LEFT JOIN |
-| R2 | Pool de 10 conexões sem timeout | Pool de 20, fail-fast 503 |
-| R3 | Banco consultado a cada requisição | Cache TTL 60–300 s |
-| R4 | Escrita síncrona bloqueava HTTP | Fila assíncrona, resposta imediata |
+> **Nota sobre o ambiente:** os testes foram executados no GitHub Codespaces (2 vCPUs, 8 GB RAM) com banco de dados PostgreSQL, servidor Node.js e K6 no mesmo host. Esse ambiente compartilhado é uma limitação — os resultados refletem a diferença arquitetural entre os cenários, não métricas absolutas de produção. Para maior validade externa, recomenda-se rodar com instâncias separadas para banco, servidor e ferramenta de carga.
 
 ---
 
-## Citação
+## Dados da entrevista
 
-```bibtex
-@inproceedings{Figueiroa2026,
-  author    = {Figueirôa, Anne Esther Lins and Arakaki, Reginaldo and
-               Oliveira, Fabiana Martins de},
-  title     = {Dívida Técnica Arquitetural em Sistemas Gerados por IA Generativa:
-               um estudo experimental sobre MVPs e escalabilidade},
-  booktitle = {Anais do 40º Simpósio Brasileiro de Engenharia de Software (SBES)},
-  series    = {CTIC-ES 2026},
-  year      = {2026},
-  address   = {Recife, PE, Brasil}
-}
-```
+Os dados qualitativos das entrevistas com os fundadores não são disponibilizados em cumprimento ao compromisso de anonimização (TCLE assinado).
+
+---
+
+## Licença
+
+Artefatos disponibilizados para fins de reprodutibilidade acadêmica.  
+Artigo submetido ao VII CTIC-ES / CBSoft 2026 — Recife, setembro de 2026.

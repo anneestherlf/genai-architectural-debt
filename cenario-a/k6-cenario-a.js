@@ -1,32 +1,34 @@
-// SCRIPT K6 — Cenário A
-// Testa a rota crítica GET /app/team (padrão N+1)
-// Cada requisição dispara 3+2M queries ao banco (M = colaboradores)
+// SCRIPT K6 — Cenário A (Baseline gerado pelo Lovable)
 //
-// Execução:
+// O que este script testa:
+//   - GET /app/team: padrão N+1, executa 3+2M queries por requisição
+//   - POST /app/modules/:id/complete: escrita SÍNCRONA — bloqueia HTTP
+//     até o upsert completar (sem fila)
+//
+// Pré-requisitos:
+//   cd cenario-a
+//   docker compose up -d --build
+//   sleep 15
+//   node seed.js
 //   k6 run k6-cenario-a.js 2>&1 | tee resultado-cenario-a-log.txt
-//
-// Pré-requisito: backend rodando em http://localhost:3000
-//   docker compose up -d && node seed.js
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Rate, Counter } from 'k6/metrics';
 
 const latenciaDashboard = new Trend('latencia_dashboard_ms', true);
-const taxaErro = new Rate('taxa_erro');
-const errosTotal = new Counter('erros_total');
+const latenciaEscrita   = new Trend('latencia_escrita_ms', true);
+const taxaErro          = new Rate('taxa_erro');
+const errosTotal        = new Counter('erros_total');
 
 export const options = {
-  stages: [
-    { duration: '60s', target: 100  }, // E1
-    { duration: '60s', target: 500  }, // E2
-    { duration: '60s', target: 1000 }, // E3
-    { duration: '60s', target: 2000 }, // E4 — reduzido para o ambiente
-    { duration: '60s', target: 3000 }, // E5 — ponto de ruptura esperado
-  ],
+  // 100 VUs fixos por 3 minutos — estável o suficiente para o Codespaces
+  // e suficiente para evidenciar o N+1 e a escrita síncrona sob carga
+  vus:      100,
+  duration: '3m',
   thresholds: {
-    'http_req_failed':    ['rate<0.10'],
-    'http_req_duration':  ['p(95)<5000'],
+    'http_req_failed':       ['rate<0.10'],
+    'http_req_duration':     ['p(95)<5000'],
     'latencia_dashboard_ms': ['p(95)<2000'],
   },
 };
@@ -34,15 +36,22 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 
 export function setup() {
-  // Login como gestor — único papel que acessa /app/team
   const res = http.post(
     `${BASE_URL}/auth/login`,
     JSON.stringify({ email: 'manager1@test.com', password: 'senha123' }),
     { headers: { 'Content-Type': 'application/json' } }
   );
-  const token = JSON.parse(res.body).token;
-  if (!token) throw new Error('Login falhou: ' + res.body);
-  return { token };
+  const body = JSON.parse(res.body);
+  if (!body.token) throw new Error('Login falhou: ' + res.body);
+
+  // Pegar um moduleId válido para usar nas escritas
+  const tracksRes = http.get(`${BASE_URL}/app/tracks`, {
+    headers: { Authorization: `Bearer ${body.token}` },
+  });
+  const tracks = JSON.parse(tracksRes.body);
+  const moduleId = tracks?.[0]?.modules?.[0]?.id || null;
+
+  return { token: body.token, moduleId };
 }
 
 export default function (data) {
@@ -51,30 +60,39 @@ export default function (data) {
     'Authorization': `Bearer ${data.token}`,
   };
 
-  // Rota crítica: dashboard do gestor (N+1 — 3+2M queries por req)
-  const r = http.get(`${BASE_URL}/app/team`, { headers });
-  latenciaDashboard.add(r.timings.duration);
+  // 1. Dashboard do gestor — N+1: 3+2M queries por requisição
+  const rTeam = http.get(`${BASE_URL}/app/team`, { headers });
+  latenciaDashboard.add(rTeam.timings.duration);
 
-  const ok = check(r, {
-    'status 200':        (res) => res.status === 200,
-    'retorna members':   (res) => {
-      try { return JSON.parse(res.body).members !== undefined; }
+  const okTeam = check(rTeam, {
+    'team: status 200':      (r) => r.status === 200,
+    'team: retorna members': (r) => {
+      try { return JSON.parse(r.body).members !== undefined; }
       catch { return false; }
     },
   });
+  if (!okTeam) { errosTotal.add(1); taxaErro.add(1); } else { taxaErro.add(0); }
 
-  if (!ok) {
-    errosTotal.add(1);
-    taxaErro.add(1);
-  } else {
-    taxaErro.add(0);
+  sleep(0.5);
+
+  // 2. Escrita síncrona — bloqueia HTTP até o upsert completar (sem fila)
+  if (data.moduleId) {
+    const rComplete = http.post(
+      `${BASE_URL}/app/modules/${data.moduleId}/complete`,
+      JSON.stringify({}),
+      { headers }
+    );
+    latenciaEscrita.add(rComplete.timings.duration);
+    check(rComplete, { 'complete: status 200': (r) => r.status === 200 });
   }
 
-  sleep(1); // 1s entre requisições por VU
+  sleep(1);
 }
 
 export function teardown() {
   console.log('\n=== CENÁRIO A CONCLUÍDO ===');
-  console.log('Rota testada: GET /app/team (padrão N+1)');
-  console.log('Verifique latencia_dashboard_ms e taxa_erro para o ponto de ruptura.');
+  console.log('Rotas testadas:');
+  console.log('  GET  /app/team              — padrão N+1 (sem fila, sem cache)');
+  console.log('  POST /app/modules/:id/complete — escrita síncrona (bloqueia HTTP)');
+  console.log('Verifique latencia_dashboard_ms e latencia_escrita_ms nos resultados.');
 }

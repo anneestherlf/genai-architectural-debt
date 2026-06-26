@@ -56,7 +56,7 @@ imediato em vez de requisições penduradas indefinidamente.
 ## R3 — Cache em memória com TTL (sinal S3)
 
 **Fraqueza identificada:** endpoints de dados quase-estáticos (`GET /app/tracks`,
-`GET /app/modules/:id`) iam ao banco em cada requisição. Com 5.000 VUs, cada
+`GET /app/modules/:id`) iam ao banco em cada requisição. Com 100 VUs simultâneos, cada
 segundo gerava milhares de queries idênticas.
 
 **Prompt enviado ao Claude:**
@@ -70,7 +70,7 @@ aparecer atualizadas [comp. 3]. Não adicione cache em /app/team nem
 com Redis em produção [comp. 4].
 ```
 
-**Resultado:** sob 5.000 VUs, taxa esperada de cache hit >98% para trilhas e >99%
+**Resultado:** sob carga concorrente, taxa esperada de cache hit >98% para trilhas e >99%
 para módulos, eliminando virtualmente todas as queries repetidas.
 
 ---
@@ -128,5 +128,5 @@ melhor; e (c) o que precisaria mudar para suportar 10× mais usuários
 simultâneos.
 ```
 
-**Referência:** Seção 7.2 do artigo. O modelo é descrito como um
+**Referência:** Seção 5.2 do artigo. O modelo é descrito como um
 *architectural constraint prompt pattern* (White et al., 2023).
