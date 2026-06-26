@@ -1,7 +1,7 @@
 {
   "metadata": {
     "cenario": "B",
-    "descricao": "Backend refatorado com 4 decisões arquiteturais explícitas (R1-R4)",
+    "descricao": "Servidor de aplicação refatorado com 4 decisões arquiteturais explícitas (R1-R4)",
     "data_execucao": "2026-06-25",
     "ambiente": {
       "plataforma": "GitHub Codespaces",
@@ -24,7 +24,7 @@
   },
   "resultados": {
     "iteracoes_completas": 8901,
-    "taxa_erro_pct": 0.00,
+    "taxa_erro_pct": 0.0,
     "latencia_media_ms": 25,
     "latencia_p90_ms": 29,
     "latencia_p95_ms": 62,

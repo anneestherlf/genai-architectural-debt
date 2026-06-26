@@ -1,7 +1,7 @@
 {
   "metadata": {
     "cenario": "A",
-    "descricao": "Backend baseline gerado pelo Lovable sem especificação arquitetural",
+    "descricao": "Servidor de aplicação baseline gerado pelo Lovable sem especificação arquitetural",
     "data_execucao": "2026-06-25",
     "ambiente": {
       "plataforma": "GitHub Codespaces",
@@ -19,7 +19,7 @@
   },
   "resultados": {
     "iteracoes_completas": 5733,
-    "taxa_erro_pct": 0.00,
+    "taxa_erro_pct": 0.0,
     "latencia_media_ms": 1660,
     "latencia_p90_ms": 2660,
     "latencia_p95_ms": 2890,

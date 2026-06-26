@@ -36,6 +36,9 @@ O experimento compara dois servidores de aplicação de uma plataforma de onboar
 
 ```
 genai-architectural-debt/
+├── artigo/
+│   ├── main.tex               # Artigo completo (LaTeX / CBSoft template)
+│   └── referencias.bib        # Referências bibliográficas
 ├── cenario-a/
 │   ├── server.js              # Servidor gerado pelo Lovable (sem refatoração)
 │   ├── schema.sql             # Schema do banco de dados
@@ -54,8 +57,6 @@ genai-architectural-debt/
 │   └── resultado-cenario-b.json  # Métricas reais do teste
 ├── prompts/
 │   └── prompts-arquiteturais.md  # Prompts completos R1–R4 com os 4 componentes
-├── main.tex                   # Artigo completo (LaTeX / CBSoft template)
-├── referencias.bib            # Referências bibliográficas
 └── README.md
 ```
 
