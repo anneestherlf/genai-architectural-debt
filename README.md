@@ -11,11 +11,12 @@ Repositório de artefatos do artigo **"Dívida Técnica Arquitetural em Sistemas
 
 ## O que tem aqui
 
-O experimento compara dois servidores de aplicação de uma plataforma de onboarding corporativo, implementados sobre a mesma pilha tecnológica (Node.js + PostgreSQL). A diferença entre eles está exclusivamente nas decisões arquiteturais embutidas nos prompts de geração.
+O experimento compara dois servidores de aplicação de uma plataforma de onboarding corporativo, implementados sobre a mesma pilha tecnológica de destino (Node.js + PostgreSQL) e testados sob condições idênticas (mesmos dados, mesma infraestrutura, mesmo protocolo de carga). O Cenário B foi obtido por refatoração do código do Cenário A, via prompts arquiteturais explícitos enviados a um assistente de codificação baseado em LLM (Claude) — uma ferramenta distinta do construtor no-code (Lovable) usado no Cenário A. Ferramenta de geração e modo de construção (geração autônoma vs. refatoração guiada) são, portanto, variáveis não controladas entre os cenários; ver Limitações no artigo (`artigo/main.tex`).
 
 | | Cenário A | Cenário B |
 |---|---|---|
-| Geração | Lovable (prompts de negócio) | Claude — prompts arquiteturais |
+| Ferramenta de geração | Lovable (no-code) | Claude — refatoração guiada |
+| Modo de construção | Geração autônoma | Refatoração do código do Cenário A |
 | Queries por requisição (`/app/team`) | 109 (padrão N+1) | 1 (JOIN) |
 | Pool de conexões | max:10, sem timeout | max:20, timeout 2 s |
 | Cache | Ausente | TTL 60–300 s (node-cache) |
