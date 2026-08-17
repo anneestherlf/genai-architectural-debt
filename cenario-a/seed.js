@@ -11,6 +11,22 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
+// ── SEED FIXA PARA REPRODUTIBILIDADE ────────────────────────────────
+// Gerador pseudo-aleatório determinístico (mulberry32) para que o volume de
+// dados sintéticos (matrículas e progresso) seja idêntico entre execuções,
+// permitindo reprodução exata dos resultados reportados no artigo.
+const SEED = 42;
+function mulberry32(seed) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(SEED);
+
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
@@ -191,7 +207,7 @@ async function seed() {
       for (const employeeId of employees) {
         for (const trackId of tracks) {
           // 70% de chance de matrícula
-          if (Math.random() > ENROLLMENT_RATE) continue;
+          if (rand() > ENROLLMENT_RATE) continue;
 
           await client.query(
             'INSERT INTO enrollments (user_id, track_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
@@ -204,13 +220,13 @@ async function seed() {
           let canProgress = true; // simula progressão sequencial
           for (const moduleId of modules) {
             if (!canProgress) break;
-            if (Math.random() > PROGRESS_RATE) {
+            if (rand() > PROGRESS_RATE) {
               canProgress = false;
               continue;
             }
             await client.query(
               `INSERT INTO module_progress (user_id, module_id, completed, completed_at)
-               VALUES ($1, $2, true, NOW() - INTERVAL '${Math.floor(Math.random() * 30)} days')
+               VALUES ($1, $2, true, NOW() - INTERVAL '${Math.floor(rand() * 30)} days')
                ON CONFLICT DO NOTHING`,
               [employeeId, moduleId]
             );
