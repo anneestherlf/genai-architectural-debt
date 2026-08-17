@@ -2,7 +2,7 @@
   "metadata": {
     "cenario": "A",
     "descricao": "Servidor de aplicação baseline gerado pelo Lovable sem especificação arquitetural",
-    "data_execucao": "2026-06-25",
+    "data_execucao": "2026-08-17",
     "ambiente": {
       "plataforma": "GitHub Codespaces",
       "cpu": "2 vCPUs",
@@ -15,16 +15,22 @@
       "vus": 100,
       "duracao": "3m",
       "rota_principal": "GET /app/team"
+    },
+    "seed": {
+      "determinística": true,
+      "gerador": "mulberry32",
+      "seed_valor": 42,
+      "dataset": "1785 matrículas, 1219 registros de progresso"
     }
   },
   "resultados": {
-    "iteracoes_completas": 5733,
+    "iteracoes_completas": 5346,
     "taxa_erro_pct": 0.0,
-    "latencia_media_ms": 1660,
-    "latencia_p90_ms": 2660,
-    "latencia_p95_ms": 2890,
-    "latencia_max_ms": 3990,
-    "throughput_req_s": 31.3,
+    "latencia_media_ms": 1880,
+    "latencia_p90_ms": 2590,
+    "latencia_p95_ms": 2800,
+    "latencia_max_ms": 3780,
+    "throughput_req_s": 29.29,
     "threshold_latencia_dashboard_violado": true,
     "queries_por_req": 109,
     "padrao_query": "N+1 (loop for/await)",
@@ -34,11 +40,11 @@
     "pool_timeout": null
   },
   "raw_metrics": {
-    "http_req_duration_avg": "1.66s",
-    "http_req_duration_p90": "2.66s",
-    "http_req_duration_p95": "2.89s",
+    "http_req_duration_avg": "1.88s",
+    "http_req_duration_p90": "2.59s",
+    "http_req_duration_p95": "2.8s",
     "http_req_failed": "0.00%",
-    "http_reqs_total": 5735,
-    "iteration_duration_avg": "3.16s"
+    "http_reqs_total": 5348,
+    "iteration_duration_avg": "3.39s"
   }
 }

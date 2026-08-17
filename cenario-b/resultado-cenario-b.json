@@ -2,7 +2,7 @@
   "metadata": {
     "cenario": "B",
     "descricao": "Servidor de aplicação refatorado com 4 decisões arquiteturais explícitas (R1-R4)",
-    "data_execucao": "2026-06-25",
+    "data_execucao": "2026-08-17",
     "ambiente": {
       "plataforma": "GitHub Codespaces",
       "cpu": "2 vCPUs",
@@ -20,18 +20,24 @@
         "GET /app/tracks (cache TTL 60s)",
         "GET /health/queue (monitoramento da fila)"
       ]
+    },
+    "seed": {
+      "determinística": true,
+      "gerador": "mulberry32",
+      "seed_valor": 42,
+      "dataset": "1785 matrículas, 1219 registros de progresso"
     }
   },
   "resultados": {
-    "iteracoes_completas": 8901,
+    "iteracoes_completas": 8879,
     "taxa_erro_pct": 0.0,
-    "latencia_media_ms": 25,
-    "latencia_p90_ms": 29,
-    "latencia_p95_ms": 62,
-    "latencia_max_ms": 1060,
-    "throughput_req_s": 102.7,
-    "latencia_cache_media_ms": 3.32,
-    "latencia_cache_p95_ms": 9.76,
+    "latencia_media_ms": 30.05,
+    "latencia_p90_ms": 60.8,
+    "latencia_p95_ms": 90.8,
+    "latencia_max_ms": 925.08,
+    "throughput_req_s": 102.42,
+    "latencia_cache_media_ms": 4.06,
+    "latencia_cache_p95_ms": 16.1,
     "fila_tamanho_max": 0,
     "threshold_violado": false,
     "queries_por_req": 1,
@@ -42,21 +48,21 @@
     "pool_timeout_ms": 2000
   },
   "comparacao_cenario_a": {
-    "reducao_latencia_media_pct": 98.5,
-    "reducao_latencia_p95_pct": 97.9,
-    "aumento_throughput_pct": 232,
-    "aumento_iteracoes_pct": 55,
+    "reducao_latencia_media_pct": 98.4,
+    "reducao_latencia_p95_pct": 96.8,
+    "aumento_throughput_pct": 250,
+    "aumento_iteracoes_pct": 66,
     "reducao_queries_pct": 99
   },
-"raw_metrics": {
-    "http_req_duration_avg_todas_rotas": "13.7ms",
-    "_nota": "13.7ms é a média de TODAS as rotas testadas (incluindo /app/tracks com cache, ~3ms). 25.32ms é a média apenas de GET /app/team, a rota comparada ao Cenário A na Tabela 4.",
-    "http_req_duration_p90": "16.11ms",
-    "http_req_duration_p95": "30.73ms",
+  "raw_metrics": {
+    "http_req_duration_avg_todas_rotas": "16.33ms",
+    "_nota": "16.33ms é a média de TODAS as rotas testadas (incluindo /app/tracks com cache, ~4ms). 30.05ms é a média apenas de GET /app/team, a rota comparada ao Cenário A na Tabela 4.",
+    "http_req_duration_p90": "34.66ms",
+    "http_req_duration_p95": "59.37ms",
     "http_req_failed": "0.00%",
-    "http_reqs_total": 18704,
+    "http_reqs_total": 18660,
     "iteration_duration_avg": "2.03s",
-    "latencia_dashboard_avg": "25.32ms",
-    "latencia_cache_avg": "3.32ms"
+    "latencia_dashboard_avg": "30.05ms",
+    "latencia_cache_avg": "4.06ms"
   }
 }

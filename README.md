@@ -26,7 +26,7 @@ O experimento compara dois servidores de aplicação de uma plataforma de onboar
 | Métrica | Cenário A | Cenário B |
 |---|---|---|
 | Taxa de erro | 0,00% | 0,00% |
-| Latência média | 1.660 ms | 25 ms |
+| Latência média | 1.880 ms | 30 ms |
 | Limite p95 < 2 s | **violado** | cumprido |
 | Consultas/req | 109 (loop) | 1 (JOIN) |
 
@@ -79,6 +79,10 @@ genai-architectural-debt/
 ## Como reproduzir os testes
 
 **Pré-requisitos:** Docker, Node.js, k6 instalados.
+
+> **Nota sobre determinismo:** a partir desta versão, `seed.js` usa um gerador
+> pseudo-aleatório com seed fixa (mulberry32, seed=42), garantindo que o volume
+> de dados sintéticos seja idêntico a cada execução.
 
 ### Cenário A
 
