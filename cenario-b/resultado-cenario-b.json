@@ -48,8 +48,9 @@
     "aumento_iteracoes_pct": 55,
     "reducao_queries_pct": 99
   },
-  "raw_metrics": {
-    "http_req_duration_avg": "13.7ms",
+"raw_metrics": {
+    "http_req_duration_avg_todas_rotas": "13.7ms",
+    "_nota": "13.7ms é a média de TODAS as rotas testadas (incluindo /app/tracks com cache, ~3ms). 25.32ms é a média apenas de GET /app/team, a rota comparada ao Cenário A na Tabela 4.",
     "http_req_duration_p90": "16.11ms",
     "http_req_duration_p95": "30.73ms",
     "http_req_failed": "0.00%",

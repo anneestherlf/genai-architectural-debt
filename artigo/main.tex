@@ -396,10 +396,17 @@ erro $<$\,1\%. Os testes de carga~\cite{grafana2024} foram executados com
 100 usuários virtuais (VUs) simultâneos por 3 minutos, rota
 \texttt{GET /app/team}, em GitHub Codespaces (2\,vCPUs, 8\,GB RAM), com banco de
 dados PostgreSQL, servidor Node.js e K6 no mesmo host. Cada usuário virtual realiza,
-em sequência, autenticação, acesso à trilha e registro de progresso. Métricas
-estáticas: Complexidade Ciclomática (CC)~\cite{McCabe1976}, Acoplamento entre
-Objetos (CBO) e Falta de Coesão em Métodos (LCOM)~\cite{Chidamber1994} ---
-complementam a análise dinâmica.
+em sequência, autenticação, acesso à trilha e registro de progresso. Como métrica
+estática complementar, calculou-se a Complexidade Ciclomática (CC)~\cite{McCabe1976}
+média por função em ambos os servidores via a ferramenta \textit{lizard}: CC média
+de 2,4 no Cenário~A (15 funções, 231 linhas) e 2,2 no Cenário~B (18 funções, 263
+linhas), ambas bem abaixo do limiar de risco (CC $>$ 15). Esse resultado indica que
+a diferença de desempenho observada não decorre de complexidade de código, mas
+exclusivamente do padrão de acesso a dados escolhido. Métricas de acoplamento e
+coesão orientadas a objetos (CBO, LCOM)~\cite{Chidamber1994} não se aplicam a este
+contexto, pois ambos os servidores seguem estilo procedural baseado em rotas
+Express, sem classes. Os dados completos da análise estão disponíveis no
+repositório de artefatos~\cite{GenAIDebt2026}.
 
 %% ─────────────────────────────────────────────────────────────────────────────
 \section{Cenário A: MVP Gerado por IAG}
@@ -672,15 +679,22 @@ ferramentas.
 \subsection{Limitações}
 \label{sec:limitacoes}
 
-Quatro limitações principais: (1)~os testes de carga foram executados em GitHub
+Cinco limitações principais: (1)~os testes de carga foram executados em GitHub
 Codespaces com banco de dados, servidor e K6 no mesmo host, o que impede isolar
 o gargalo arquitetural do gargalo de infraestrutura sob cargas elevadas; os
 resultados dinâmicos devem ser interpretados como evidência qualitativa da
 degradação, não como métricas absolutas; (2)~dados de negócio sintéticos, que
 podem subrepresentar o impacto do N+1 com volumes reais; (3)~fundamento em uma
 única startup, restringindo a generalização dos padrões P1--P5 a outros domínios
-e tecnologias; e (4)~avaliação ATAM e RM-ODP realizada por um único autor, de
-caráter qualitativo-comparativo.
+e tecnologias; (4)~avaliação ATAM e RM-ODP realizada por um único autor, de
+caráter qualitativo-comparativo; e (5)~por limitações de instrumentação de carga
+sobre a pilha serverless original (Cloudflare Workers/Supabase), o Cenário~A
+submetido ao teste de carga é uma reprodução funcionalmente equivalente do
+padrão N+1 observado no aplicativo gerado pelo Lovable, implementada em
+Node.js/PostgreSQL sobre a mesma pilha do Cenário~B para permitir comparação
+controlada. O aplicativo originalmente gerado pelo Lovable (TanStack
+Start/Bun/Cloudflare Workers/Supabase) está disponível no repositório de
+artefatos para inspeção do padrão arquitetural original~\cite{GenAIDebt2026}.
 
 \subsection{Trabalhos Futuros}
 
@@ -707,8 +721,11 @@ Os artefatos deste estudo estão disponíveis em repositório
 público~\cite{GenAIDebt2026},
 incluindo: código-fonte completo dos Cenários~A e~B (\texttt{server.js},
 \texttt{schema.sql}, \texttt{seed.js}, Dockerfiles), scripts K6 para reprodução
-dos testes de carga, e os quatro prompts arquiteturais completos de R1--R4 em
-\texttt{prompts/\linebreak[0]prompts-arquiteturais.md}. O README contém instruções de
+dos testes de carga, os quatro prompts arquiteturais completos de R1--R4 em
+\texttt{prompts/\linebreak[0]prompts-arquiteturais.md}, a análise de complexidade
+ciclomática em \texttt{analise-estatica/\linebreak[0]complexidade-ciclomatica.md},
+e o código-fonte original gerado pelo Lovable (pasta \texttt{src/}, stack
+TanStack~Start/Supabase/Cloudflare~Workers). O README contém instruções de
 reprodução e observações sobre a configuração de ambiente recomendada (instâncias
 separadas para banco, servidor e K6). Os dados qualitativos da entrevista não são
 disponibilizados em cumprimento ao compromisso de anonimização (TCLE).

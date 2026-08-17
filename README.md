@@ -36,29 +36,43 @@ O experimento compara dois servidores de aplicação de uma plataforma de onboar
 
 ```
 genai-architectural-debt/
+├── src/ # App ORIGINAL gerado pelo Lovable (TanStack Start +
+│ # Supabase + Cloudflare Workers) — código-fonte de
+│ # referência, não é o artefato usado no teste de carga
+├── supabase/ # Migrations do schema Supabase do app original
 ├── artigo/
-│   ├── main.tex               # Artigo completo (LaTeX / CBSoft template)
-│   └── referencias.bib        # Referências bibliográficas
+│ ├── main.tex # Artigo completo (LaTeX / CBSoft template)
+│ └── referencias.bib # Referências bibliográficas
+├── analise-estatica/
+│ └── complexidade-ciclomatica.md # CC (McCabe) via lizard, Cenários A e B
 ├── cenario-a/
-│   ├── server.js              # Servidor gerado pelo Lovable (sem refatoração)
-│   ├── schema.sql             # Schema do banco de dados
-│   ├── seed.js                # Geração de dados sintéticos (530 usuários, 50 trilhas)
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   ├── k6-cenario-a.js        # Script K6 — teste de carga
-│   └── resultado-cenario-a.json  # Métricas reais do teste
+│ ├── server.js # Node.js/Express/pg — REPRODUÇÃO EQUIVALENTE do
+│ │ # padrão arquitetural do app em src/, usada no
+│ │ # teste de carga (ver Limitações do artigo)
+│ ├── schema.sql # Schema do banco de dados
+│ ├── seed.js # Geração de dados sintéticos (530 usuários, 50 trilhas)
+│ ├── Dockerfile
+│ ├── docker-compose.yml
+│ ├── k6-cenario-a.js # Script K6 — teste de carga
+│ └── resultado-cenario-a.json # Métricas reais do teste
 ├── cenario-b/
-│   ├── server.js              # Servidor refatorado com 4 decisões arquiteturais
-│   ├── schema.sql
-│   ├── seed.js
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   ├── k6-cenario-b.js        # Script K6 — mesmo protocolo do Cenário A
-│   └── resultado-cenario-b.json  # Métricas reais do teste
+│ ├── server.js # Servidor refatorado com 4 decisões arquiteturais
+│ ├── schema.sql
+│ ├── seed.js
+│ ├── Dockerfile
+│ ├── docker-compose.yml
+│ ├── k6-cenario-b.js # Script K6 — mesmo protocolo do Cenário A
+│ └── resultado-cenario-b.json # Métricas reais do teste
 ├── prompts/
-│   └── prompts-arquiteturais.md  # Prompts completos R1–R4 com os 4 componentes
+│ └── prompts-arquiteturais.md # Prompts completos R1–R4 com os 4 componentes
 └── README.md
 ```
+> **Nota:** `src/` e `supabase/` contêm o aplicativo tal como o Lovable o gerou
+> originalmente. Como não é viável rodar K6 diretamente contra a stack serverless
+> (Cloudflare Workers + Supabase), o Cenário A testado em carga foi reimplementado
+> em `cenario-a/` sobre Node.js/PostgreSQL, preservando fielmente o padrão N+1 e
+> as demais decisões (ou ausência delas) observadas no app original — ver
+> Limitações no artigo.
 
 ---
 
