@@ -8,7 +8,7 @@
       "cpu": "2 vCPUs",
       "ram": "8 GB",
       "banco_servidor_k6_mesmo_host": true,
-      "nota": "Ambiente idêntico ao Cenário A — diferenças atribuídas exclusivamente à arquitetura"
+      "nota": "Ambiente idêntico ao Cenário A. Ferramenta de geração e modo de construção variam entre os cenários (ver Limitações no artigo)"
     },
     "script": "k6-cenario-b.js",
     "protocolo": {
@@ -51,6 +51,7 @@
     "reducao_latencia_media_pct": 98.4,
     "reducao_latencia_p95_pct": 96.8,
     "aumento_throughput_pct": 250,
+    "_nota_throughput": "req/s não é diretamente comparável: o script do Cenário B executa mais requisições por iteração. Use aumento_iteracoes_pct (66) como medida equivalente.",
     "aumento_iteracoes_pct": 66,
     "reducao_queries_pct": 99
   },
