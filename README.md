@@ -30,6 +30,13 @@ O experimento compara dois servidores de aplicação de uma plataforma de onboar
 | Latência média | 1.880 ms | 30 ms |
 | Limite p95 < 2 s | **violado** | cumprido |
 | Consultas/req | 109 (loop) | 1 (JOIN) |
+| Iterações completas (3 min) | 5.346 | 8.879 (+66%) |
+
+> **Sobre a vazão (req/s):** o script do Cenário B executa mais requisições por iteração que o do Cenário A (inclui `GET /app/tracks` e `GET /health/queue`), então a razão de req/s (29 vs. 102) não é diretamente comparável; use a latência da rota `GET /app/team` e as iterações completas como métricas de comparação.
+>
+> **Limitação conhecida dos scripts K6:** em ambos os scripts, `setup()` lê `tracks[0].modules[0].id`, mas `GET /app/tracks` retorna `{ tracks: [...] }`; o `moduleId` fica nulo e o `POST /app/modules/:id/complete` não é executado. Logo, a escrita (síncrona no A, fila assíncrona no B) não foi exercitada sob carga (`fila_tamanho_max` = 0).
+>
+> **Thresholds:** os scripts têm limites internos diferentes (A: p95 < 2.000 ms no dashboard; B: p95 < 500 ms). O SLA usado na comparação do artigo é p95 < 2.000 ms e erro < 1%; o p95 do dashboard no B (90,8 ms) cumpre ambos.
 
 ---
 
@@ -42,7 +49,7 @@ genai-architectural-debt/
 │ # referência, não é o artefato usado no teste de carga
 ├── supabase/ # Migrations do schema Supabase do app original
 ├── artigo/
-│ ├── main.tex # Artigo completo (LaTeX / CBSoft template)
+│ ├── main.tex # Artigo completo (LaTeX / template SBES 2026)
 │ └── referencias.bib # Referências bibliográficas
 ├── analise-estatica/
 │ └── complexidade-ciclomatica.md # CC (McCabe) via lizard, Cenários A e B
@@ -124,4 +131,4 @@ Os dados qualitativos das entrevistas com os fundadores não são disponibilizad
 ## Licença
 
 Artefatos disponibilizados para fins de reprodutibilidade acadêmica.  
-Artigo submetido ao VII CTIC-ES / CBSoft 2026 — Recife, setembro de 2026.
+Artigo submetido ao VII CTIC-ES / SBES 2026.

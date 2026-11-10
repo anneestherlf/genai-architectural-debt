@@ -424,9 +424,9 @@ limitação na Seção~\ref{sec:limitacoes}.
 
 \subsection{Protocolo Experimental}
 
-Ambos os cenários foram avaliados pelo ATAM~\cite{Kazman2000}, com SLA (\textit{Service Level Agreement}) definido em latência $<$\,2.000\,ms (p95) e erro $<$\,1\%. Para isso, os testes de carga~\cite{grafana2024} foram executados com 100 usuários virtuais (VUs) simultâneos por 3 minutos na rota \texttt{GET /app/team}, em ambiente GitHub Codespaces (2\,vCPUs, 8\,GB RAM), com banco de dados PostgreSQL, servidor Node.js e K6 no mesmo host; cada usuário virtual realiza, em sequência, autenticação, acesso à trilha e registro de progresso.
+Ambos os cenários foram avaliados pelo ATAM~\cite{Kazman2000}, com SLA (\textit{Service Level Agreement}) definido em latência $<$\,2.000\,ms (p95) e erro $<$\,1\%. Para isso, os testes de carga~\cite{grafana2024} foram executados com 100 usuários virtuais (VUs) simultâneos por 3 minutos na rota \texttt{GET /app/team}, em ambiente GitHub Codespaces (2\,vCPUs, 8\,GB RAM), com banco de dados PostgreSQL, servidor Node.js e K6 no mesmo host; cada iteração dos scripts K6 acessa o dashboard do gestor e, quando há um módulo válido, registra progresso; o script do Cenário~B também exercita \texttt{GET /app/tracks} (cache) e \texttt{GET /health/queue}.
 
-Para descartar a hipótese de que a diferença de desempenho decorreria simplesmente de código mais complexo no Cenário~B, calculou-se também a Complexidade Ciclomática (CC)~\cite{McCabe1976} média por função em ambos os servidores, via a ferramenta \textit{lizard}. O resultado foi CC média de 2,4 no Cenário~A (15 funções, 231 linhas) contra 2,2 no Cenário~B (18 funções, 263 linhas) — ambas bem abaixo do limiar de risco (CC $>$ 15) e, portanto, estatisticamente equivalentes. Isso confirma que a diferença de desempenho não decorre de complexidade de código, mas do padrão de acesso a dados escolhido. Métricas de acoplamento e coesão orientadas a objetos (CBO, LCOM)~\cite{Chidamber1994} não se aplicam a este contexto, já que ambos os servidores seguem estilo procedural baseado em rotas Express, sem classes. Os dados completos dessa análise estão disponíveis no repositório de artefatos~\cite{GenAIDebt2026}.
+Para descartar a hipótese de que a diferença de desempenho decorreria simplesmente de código mais complexo no Cenário~B, calculou-se também a Complexidade Ciclomática (CC)~\cite{McCabe1976} média por função em ambos os servidores, via a ferramenta \textit{lizard}. O resultado foi CC média de 2,3 no Cenário~A (15 funções, 231 linhas de código) contra 2,0 no Cenário~B (18 funções, 263 linhas de código) — ambas bem abaixo do limiar de risco (CC $>$ 15) e comparáveis entre si, sem teste estatístico formal. Isso confirma que a diferença de desempenho não decorre de complexidade de código, mas do padrão de acesso a dados escolhido. Métricas de acoplamento e coesão orientadas a objetos (CBO, LCOM)~\cite{Chidamber1994} não se aplicam a este contexto, já que ambos os servidores seguem estilo procedural baseado em rotas Express, sem classes. Os dados completos dessa análise estão disponíveis no repositório de artefatos~\cite{GenAIDebt2026}.
 
 %% ─────────────────────────────────────────────────────────────────────────────
 \section{Cenário A: MVP Gerado por IAG}
@@ -609,7 +609,7 @@ $O(N)$ para $O(1)$, é a causa raiz da degradação observada nos testes de carg
 e é inspecionável por qualquer desenvolvedor que examine o repositório.
 
 O achado mais relevante é a \textbf{desproporção entre esforço e impacto}:
-94 linhas de código a mais (25\%) e cerca de uma hora de prompts arquiteturais
+cerca de 32 linhas de código a mais (+14\%, medido pelo \textit{lizard}) e cerca de uma hora de prompts arquiteturais
 produziram redução de 98,4\% na latência média. Investir em especificação
 arquitetural desde o início é muito mais barato do que refatorar um sistema
 que já apresenta problemas em produção.
@@ -642,7 +642,7 @@ A principal contribuição empírica é a quantificação da dívida técnica ar
 o Cenário~A executa 109 consultas ao banco por requisição em sua rota crítica, contra
 1 no Cenário~B, diferença inspecionável no código-fonte e corroborada pelos testes de
 carga, que evidenciaram latência média de 1.880\,ms vs.\ 30\,ms (−98,4\%) com 100
-VUs simultâneos, e vazão (\textit{throughput}) de 29 vs.\ 102\,req/s (+250\%).
+VUs simultâneos, e 66\% mais iterações completas no mesmo intervalo (5.346 vs.\ 8.879). A vazão em req/s (29 vs.\ 102) não é diretamente comparável, pois o script do Cenário~B executa mais requisições por iteração.
 A contribuição científica original é o \textbf{modelo de prompt arquitetural de
 quatro componentes}, que operacionaliza a especificação de requisitos não-funcionais
 de escalabilidade em linguagem acessível a fundadores sem formação
@@ -655,7 +655,7 @@ ferramentas.
 \subsection{Limitações}
 \label{sec:limitacoes}
 
-Seis limitações principais: (1)~os testes de carga foram executados em GitHub
+Sete limitações principais: (1)~os testes de carga foram executados em GitHub
 Codespaces com banco de dados, servidor e K6 no mesmo host, o que impede isolar
 o gargalo arquitetural do gargalo de infraestrutura sob cargas elevadas; os
 resultados dinâmicos devem ser interpretados como evidência qualitativa da
@@ -663,14 +663,14 @@ degradação, não como métricas absolutas; (2)~dados de negócio sintéticos, 
 podem subrepresentar o impacto do N+1 com volumes reais; (3)~fundamento em uma
 única startup, restringindo a generalização dos padrões P1--P5 a outros domínios
 e tecnologias; (4)~avaliação ATAM e RM-ODP realizada por um único autor, de
-caráter qualitativo-comparativo; e (5)~por limitações de instrumentação de carga
+caráter qualitativo-comparativo; (5)~por limitações de instrumentação de carga
 sobre a pilha serverless original (Cloudflare Workers/Supabase), o Cenário~A
 submetido ao teste de carga é uma reprodução funcionalmente equivalente do
 padrão N+1 observado no aplicativo gerado pelo Lovable, implementada em
 Node.js/PostgreSQL sobre a mesma pilha do Cenário~B para permitir comparação
 controlada. O aplicativo originalmente gerado pelo Lovable (TanStack
 Start/Bun/Cloudflare Workers/Supabase) está disponível no repositório de
-artefatos para inspeção do padrão arquitetural original~\cite{GenAIDebt2026}; e
+artefatos para inspeção do padrão arquitetural original~\cite{GenAIDebt2026};
 (6)~o Cenário~B não foi gerado de forma independente a partir dos mesmos requisitos
 de negócio do Cenário~A, mas obtido por refatoração do código deste, aplicada por
 uma ferramenta de geração distinta (assistente de codificação baseado em LLM, em vez
@@ -680,9 +680,14 @@ entre os cenários, o que impede atribuir a diferença de desempenho exclusivame
 nível de especificação arquitetural do prompt -- a interpretação mais conservadora é
 que os resultados demonstram o impacto de decisões arquiteturais explícitas aplicadas
 a um sistema já funcional, não necessariamente o impacto isolado do nível de
-especificação em uma geração original. Trabalhos futuros devem replicar o Cenário~B
-como uma geração independente pela mesma ferramenta do Cenário~A, usando prompts com
-e sem especificação arquitetural, para isolar essa variável.
+especificação em uma geração original; e (7)~nos scripts K6 de ambos os cenários,
+a escrita de progresso (\texttt{POST /app/modules/:id/complete}) não foi exercitada:
+o \texttt{setup()} lê \texttt{tracks[0].modules[0].id} de uma resposta no formato
+\texttt{\{tracks: [...]\}}, o que resulta em \texttt{moduleId} nulo e faz o teste pular a escrita.
+Assim, a fila assíncrona (R4) não foi avaliada sob carga (tamanho máximo da fila igual a 0).
+Trabalhos futuros devem replicar o Cenário~B como uma geração independente pela mesma
+ferramenta do Cenário~A, usando prompts com e sem especificação arquitetural, para isolar
+essa variável, e corrigir o \textit{setup} dos scripts K6 para exercitar a escrita.
 
 \subsection{Trabalhos Futuros}
 

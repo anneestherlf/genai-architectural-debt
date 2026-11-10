@@ -15,18 +15,22 @@ lizard cenario-a/server.js cenario-b/server.js -l javascript
 
 | Arquivo               | NLOC | Funções | CC média | CC máxima |
 |------------------------|------|---------|----------|-----------|
-| `cenario-a/server.js`  | 231  | 15      | 2,4      | 6         |
-| `cenario-b/server.js`  | 263  | 18      | 2,2      | 10        |
+| `cenario-a/server.js`  | 231  | 15      | 2,3      | 5         |
+| `cenario-b/server.js`  | 263  | 18      | 2,0      | 6         |
 
 Nenhuma função em nenhum dos dois cenários ultrapassa o limiar de risco
 convencional (CC > 15). A função de maior complexidade está no Cenário B
-(CC = 10, worker da fila assíncrona de R4 — `setInterval` com tratamento de
-lote e erros), o que é esperado dado que essa é a única refatoração que
-introduz controle de fluxo adicional (processamento em lote, retry implícito).
+(CC = 6, rota `GET /app/modules/:moduleId`, linhas 292–345 de
+`cenario-b/server.js`, que combina cache, consulta do módulo e do quiz). No
+Cenário A a maior CC é 5 (rota de linhas 103–167 de `cenario-a/server.js`).
+O worker da fila assíncrona (R4) tem CC = 3.
+
+Valores obtidos com `lizard` 1.25.1; a média é calculada sobre as funções
+(15 no A e 18 no B) listadas na saída por função do comando acima.
 
 ## Interpretação
 
-A CC média é comparável entre os dois cenários (2,4 vs. 2,2) e ambas estão
+A CC média é comparável entre os dois cenários (2,3 vs. 2,0) e ambas estão
 bem abaixo de qualquer limiar de complexidade problemática. Isso reforça a
 conclusão do artigo: a degradação de desempenho do Cenário A não decorre de
 código complexo ou mal escrito — decorre da escolha do padrão de acesso a
